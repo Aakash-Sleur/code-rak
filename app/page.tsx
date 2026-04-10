@@ -1,18 +1,42 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
+import { useSession } from "next-auth/react"
+import Link from "next/link"
 
 export default function Page() {
+  const { data: session } = useSession()
+
+  if (session) {
+    return (
+      <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">Welcome back!</h1>
+          <p className="text-muted-foreground">You are logged in as {(session.user as any)?.username || session.user?.email}</p>
+        </div>
+        <Button size="lg">
+          <Link href="/dashboard">Go to Dashboard</Link>
+        </Button>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
+    <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold">Code Rak</h1>
+        <p className="text-muted-foreground">Build, test, and deploy with ease</p>
+      </div>
+      <div className="flex gap-2">
+        <Button variant="default">
+          <Link href="/signin">Sign In</Link>
+        </Button>
+        <Button variant="outline">
+          <Link href="/signup">Sign Up</Link>
+        </Button>
+      </div>
+      <div className="font-mono text-xs text-muted-foreground mt-8">
+        (Press <kbd>d</kbd> to toggle dark mode)
       </div>
     </div>
   )
