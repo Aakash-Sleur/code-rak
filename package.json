@@ -16,6 +16,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@tabler/icons-react": "^3.41.1",
     "@types/bcrypt": "^6.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "axios": "^1.14.0",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
