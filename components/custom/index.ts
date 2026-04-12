@@ -12,3 +12,6 @@ export { CustomAlert } from "./custom-alert"
 export type { } from "./custom-alert"
 
 export { showNotification, toast, ToastProvider } from "./custom-notification"
+
+export { PageLoader } from "../page-loader"
+export type { } from "../page-loader"

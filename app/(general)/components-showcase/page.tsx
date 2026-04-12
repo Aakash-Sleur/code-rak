@@ -26,8 +26,6 @@ export default function ComponentShowcase() {
   }
 
   return (
-    <div className="min-h-svh flex flex-col">
-      <Header />
       <div className="flex-1 flex flex-col gap-8 p-6">
         <div>
           <h1 className="text-3xl font-bold">Component Showcase</h1>
@@ -263,6 +261,5 @@ export default function ComponentShowcase() {
           </div>
         </section>
       </div>
-    </div>
   )
 }

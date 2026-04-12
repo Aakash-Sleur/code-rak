@@ -22,6 +22,8 @@ export async function middleware(request: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET,
   });
 
+  console.log(token)
+
   // If no token and trying to access protected route, redirect to signin
   if (!token) {
     const signInUrl = new URL("/signin", request.url);

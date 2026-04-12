@@ -1,8 +1,8 @@
 "use client"
 
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Spinner } from "@/components/ui/spinner"
 
 /**
@@ -13,12 +13,23 @@ import { Spinner } from "@/components/ui/spinner"
 export function useRequireAuth() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [hasRefreshError, setHasRefreshError] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/signin")
     }
-  }, [status, router])
+
+    // Check for refresh token error in session
+    if (session && (session as any).error === "RefreshAccessTokenError") {
+      console.warn("Detected refresh token error - forcing re-authentication");
+      setHasRefreshError(true);
+      // Sign out and redirect to signin with message
+      signOut({ redirect: false }).then(() => {
+        router.push("/signin?error=session_expired");
+      });
+    }
+  }, [status, router, session])
 
   // Still loading
   if (status === "loading") {
@@ -26,13 +37,15 @@ export function useRequireAuth() {
       isLoading: true,
       isAuthenticated: false,
       session: null,
+      hasRefreshError: false,
     }
   }
 
   return {
     isLoading: false,
-    isAuthenticated: status === "authenticated",
+    isAuthenticated: status === "authenticated" && !hasRefreshError,
     session: session,
+    hasRefreshError,
   }
 }
 

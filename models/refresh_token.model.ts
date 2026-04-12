@@ -37,5 +37,5 @@ const RefreshTokenSchema = new mongoose.Schema({
 // Create index for efficient queries
 RefreshTokenSchema.index({ userId: 1, deviceId: 1 }, { unique: true });
 
-const RefreshToken = mongoose.model("RefreshToken", RefreshTokenSchema)
+const RefreshToken = mongoose.models.RefreshToken || mongoose.model("RefreshToken", RefreshTokenSchema)
 export default RefreshToken

@@ -34,5 +34,5 @@ const CodeVersionSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-const CodeVersion = mongoose.model("CodeVersions", CodeVersionSchema)
+const CodeVersion = mongoose.models.CodeVersion || mongoose.model("CodeVersion", CodeVersionSchema)
 export default CodeVersion

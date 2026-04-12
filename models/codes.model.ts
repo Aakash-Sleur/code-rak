@@ -51,5 +51,5 @@ const CodesSchema = new mongoose.Schema({
     timestamps: true
 });
 
-const Code = mongoose.model("Folder", CodesSchema)
+const Code = mongoose.models.Code || mongoose.model("Code", CodesSchema)
 export default Code

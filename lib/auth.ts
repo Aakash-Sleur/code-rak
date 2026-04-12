@@ -16,7 +16,7 @@ async function refreshAccessToken(token: any) {
 
         console.log("Refreshing token via API:", apiUrl);
 
-        const res = await fetch(`${apiUrl}/auth/refresh`, {
+        const res = await fetch(`${apiUrl}/api/auth/refresh`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -29,6 +29,12 @@ async function refreshAccessToken(token: any) {
 
         if (!res.ok) {
             console.error("Refresh token failed:", res.status, refreshedTokens);
+            
+            // 401 typically means the refresh token is invalid/expired on backend
+            if (res.status === 401) {
+                console.error("Refresh token was rejected by backend - user needs to re-authenticate");
+            }
+            
             throw refreshedTokens;
         }
 
@@ -36,7 +42,7 @@ async function refreshAccessToken(token: any) {
         return {
             ...token,
             accessToken: refreshedTokens.accessToken,
-            refreshToken: refreshedTokens.refreshToken,
+            refreshToken: refreshedTokens.refreshToken || token.refreshToken, // Keep old refresh token if new one not provided
             accessTokenExpires: Date.now() + 60 * 60 * 1000, // 1 hour
         };
     } catch (error) {
@@ -48,7 +54,7 @@ async function refreshAccessToken(token: any) {
             (error.message.includes("ECONNREFUSED") ||
                 error.message.includes("fetch failed"))
         ) {
-            console.warn("API service not reachable, extending current token");
+            console.warn("API service not reachable, extending current token for 5 more minutes");
             // Extend the current token by 5 minutes to avoid constant refresh attempts
             return {
                 ...token,
@@ -56,7 +62,7 @@ async function refreshAccessToken(token: any) {
             };
         }
 
-        // For other errors, mark token as expired
+        // For other errors (including 401), mark token as expired
         return {
             ...token,
             error: "RefreshAccessTokenError",
@@ -136,8 +142,7 @@ const authOptions: NextAuthOptions = {
     },
     callbacks: {
         async jwt({ token, user, trigger, session }) {
-            // Handle session up
-            // date from client
+            // Handle session update from client
             if (trigger === "update" && session) {
                 return { ...token, ...session };
             }
@@ -153,7 +158,7 @@ const authOptions: NextAuthOptions = {
                     isVerified: (user as any).isVerfied,
                     accessToken: (user as any).accessToken,
                     refreshToken: (user as any).refreshToken,
-                    accessTokenExpires: Date.now() + 24 * 60 * 60 * 1000, // 1 day
+                    accessTokenExpires: Date.now() + 60 * 60 * 1000, // 1 hour - consistent with refresh
                 };
             }
 
@@ -167,10 +172,23 @@ const authOptions: NextAuthOptions = {
             return refreshAccessToken(token);
         },
         async session({ session, token }) {
+            // If there's a refresh error, the user will need to sign in again
+            // Don't immediately invalidate - let them continue but they'll get 401s
             if (token.error === "RefreshAccessTokenError") {
-                // Force sign out if refresh token is invalid
-                console.log("Refresh token error detected, user will be signed out");
-                session.error = "RefreshAccessTokenError";
+                console.warn(
+                    "Refresh token is invalid. User should sign in again. Error:",
+                    token.error
+                );
+                // Still return a session but mark it with error so the app can handle it
+                // This allows graceful UI handling instead of abrupt logout
+                if (session.user && token) {
+                    session.user.id = token.id;
+                    session.user.email = token.email;
+                    session.user.username = token.username;
+                    session.user.isVerfied = token.isVerfied;
+                    session.accessToken = token.accessToken;
+                    (session as any).error = "RefreshAccessTokenError";
+                }
                 return session;
             }
 
@@ -193,7 +211,7 @@ const authOptions: NextAuthOptions = {
                 try {
                     const apiUrl =
                         process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-                    await fetch(`${apiUrl}/auth/logout`, {
+                    await fetch(`${apiUrl}/api/auth/logout`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ userId: token.id }),

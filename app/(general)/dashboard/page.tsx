@@ -1,6 +1,12 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { useUserInfo } from "@/hooks/use-auth"
 import { useRequireAuth } from "@/hooks/use-require-auth"
 import Link from "next/link"
@@ -19,18 +25,18 @@ export default function Dashboard() {
     )
   }
 
+
+  
   if (!user) {
     return null
   }
 
   return (
-    <div className="min-h-svh flex flex-col">
-      <Header />
-      <div className="flex-1 flex flex-col gap-6 p-6">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Welcome, {username}!</p>
-        </div>
+    <div className="flex flex-1 flex-col gap-6 p-6">
+      <div>
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">Welcome, {username}!</p>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
@@ -48,12 +54,18 @@ export default function Dashboard() {
               <div className="font-medium">{email || "N/A"}</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Account Status</div>
+              <div className="text-xs text-muted-foreground">
+                Account Status
+              </div>
               <div className="font-medium">
                 {isVerified ? (
-                  <span className="text-green-600 dark:text-green-400">Verified</span>
+                  <span className="text-green-600 dark:text-green-400">
+                    Verified
+                  </span>
                 ) : (
-                  <span className="text-yellow-600 dark:text-yellow-400">Pending Verification</span>
+                  <span className="text-yellow-600 dark:text-yellow-400">
+                    Pending Verification
+                  </span>
                 )}
               </div>
             </div>
@@ -93,7 +105,6 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
-      </div>
     </div>
   )
 }
