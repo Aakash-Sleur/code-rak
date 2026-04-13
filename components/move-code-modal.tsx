@@ -203,7 +203,7 @@ export function MoveCodeModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button variant="ghost" size="sm" className="gap-2">
           <IconFolderOpen size={16} />
           Move
