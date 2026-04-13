@@ -42,16 +42,90 @@ export async function GET(
 
         const codes = await Code.find({ folder: id });
 
+        const folders = await Folder.find({ parentFolder: id });
+
         return NextResponse.json(
             {
                 message: "Folder fetched successfully",
                 folder,
-                codes
+                codes,
+                folders
             },
             { status: 200 }
         );
     } catch (error) {
         console.error("Folder fetch error:", error);
+        return NextResponse.json(
+            {
+                error: "Internal Server Error",
+                message: error instanceof Error ? error.message : "Unknown error",
+            },
+            { status: 500 }
+        );
+    }
+}
+
+export async function POST(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const session = await getServerSession(authOptions)
+
+        if (!session) {
+            return NextResponse.json(
+                { error: "Unauthorized", message: "No active session found" },
+                { status: 401 }
+            );
+        }
+
+        const { name, description, color = "#3b82f6" } = await request.json()
+
+        if (!name || !description) {
+            return NextResponse.json(
+                { error: "Bad Request", message: "Name and description are required" },
+                { status: 400 }
+            );
+        }
+
+        await connectDB()
+        const { id } = await params
+
+        // Verify parent folder exists and belongs to user
+        const parentFolder = await Folder.findById(id);
+
+        if (!parentFolder) {
+            return NextResponse.json(
+                { message: "Parent folder not found" },
+                { status: 404 }
+            );
+        }
+
+        if (parentFolder.createdBy.toString() !== session.user.id) {
+            return NextResponse.json(
+                { message: "Unauthorized" },
+                { status: 403 }
+            );
+        }
+
+        // Create nested folder
+        const newFolder = await Folder.create({
+            name,
+            description,
+            parentFolder: id,
+            createdBy: session.user.id,
+            color,
+        })
+
+        return NextResponse.json(
+            {
+                message: "Folder created successfully",
+                folder: newFolder
+            },
+            { status: 201 }
+        );
+    } catch (error) {
+        console.error("Folder creation error:", error);
         return NextResponse.json(
             {
                 error: "Internal Server Error",

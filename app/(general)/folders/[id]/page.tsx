@@ -4,9 +4,9 @@ import { useState, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/use-require-auth"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { CustomModal, showNotification } from "@/components/custom"
+import { CustomModal, showNotification, CustomInput } from "@/components/custom"
 import { PageLoader } from "@/components/page-loader"
-import { IconArrowLeft, IconCodePlus, IconTrash } from "@tabler/icons-react"
+import { IconArrowLeft, IconCodePlus, IconTrash, IconFolderPlus, IconArrowRight } from "@tabler/icons-react"
 import Link from "next/link"
 
 interface Folder {
@@ -34,7 +34,15 @@ export default function FolderDetailPage() {
 
   const [folder, setFolder] = useState<Folder | null>(null)
   const [codes, setCodes] = useState<Code[]>([])
+  const [folders, setFolders] = useState<Folder[]>([])
   const [loading, setLoading] = useState(true)
+  const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false)
+  const [folderFormData, setFolderFormData] = useState({
+    name: "",
+    description: "",
+    color: "#3b82f6",
+  })
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (!authLoading && folderId) {
@@ -54,6 +62,7 @@ export default function FolderDetailPage() {
       const data = await response.json()
       setFolder(data.folder)
       setCodes(data.codes || [])
+      setFolders(data.folders || [])
     } catch (error) {
       showNotification("Error loading folder", { type: "error" })
       console.error("Error:", error)
@@ -81,6 +90,61 @@ export default function FolderDetailPage() {
       showNotification("Code deleted successfully", { type: "success" })
     } catch (error) {
       showNotification("Error deleting code", { type: "error" })
+      console.error("Error:", error)
+    }
+  }
+
+  const handleCreateFolder = async () => {
+    if (!folderFormData.name.trim() || !folderFormData.description.trim()) {
+      showNotification("Please fill in all fields", { type: "error" })
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      const response = await fetch(`/api/folders/${folderId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(folderFormData),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to create folder")
+      }
+
+      const data = await response.json()
+      setFolders([...folders, data.folder])
+      setFolderFormData({ name: "", description: "", color: "#3b82f6" })
+      setCreateFolderModalOpen(false)
+      showNotification("Nested folder created successfully", { type: "success" })
+    } catch (error) {
+      showNotification("Error creating folder", { type: "error" })
+      console.error("Error:", error)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDeleteFolder = async (folderId: string) => {
+    if (!confirm("Are you sure you want to delete this folder and all its contents?")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/folders/${folderId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete folder")
+      }
+
+      setFolders(folders.filter((f) => f._id !== folderId))
+      showNotification("Folder deleted successfully", { type: "success" })
+    } catch (error) {
+      showNotification("Error deleting folder", { type: "error" })
       console.error("Error:", error)
     }
   }
@@ -129,6 +193,84 @@ export default function FolderDetailPage() {
         </Link>
       </div>
 
+      {/* Nested Folders Section */}
+      {folders.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Folders</h2>
+            <Button
+              onClick={() => setCreateFolderModalOpen(true)}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <IconFolderPlus size={16} />
+              Add Folder
+            </Button>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {folders.map((nestedFolder) => (
+              <div
+                key={nestedFolder._id}
+                className="group rounded-lg border border-border bg-card p-3 transition-all hover:border-primary/50 hover:shadow-md"
+              >
+                <div
+                  className="absolute left-0 top-0 h-8 w-1 rounded-tl-lg"
+                  style={{ backgroundColor: nestedFolder.color }}
+                />
+                <div className="pl-2">
+                  <h3 className="line-clamp-1 font-semibold text-foreground">
+                    {nestedFolder.name}
+                  </h3>
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                    {nestedFolder.description}
+                  </p>
+                </div>
+                <div className="mt-3 flex items-center justify-between border-t border-border pt-2">
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(nestedFolder.createdAt).toLocaleDateString()}
+                  </p>
+                  <div className="flex gap-1">
+                    <Link href={`/folders/${nestedFolder._id}`}>
+                      <Button variant="ghost" size="sm">
+                        <IconArrowRight size={14} />
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteFolder(nestedFolder._id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <IconTrash size={14} />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Add Folder Button (when no folders) */}
+      {folders.length === 0 && (
+        <div className="flex items-center gap-4 rounded-lg border border-border bg-muted/30 p-4">
+          <IconFolderPlus size={24} className="text-muted-foreground" />
+          <div className="flex-1">
+            <p className="font-medium">No nested folders</p>
+            <p className="text-sm text-muted-foreground">Create a folder to organize your code</p>
+          </div>
+          <Button
+            onClick={() => setCreateFolderModalOpen(true)}
+            size="sm"
+            className="gap-2"
+          >
+            <IconFolderPlus size={16} />
+            Create Folder
+          </Button>
+        </div>
+      )}
+
       {/* Codes List */}
       {codes.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 p-8">
@@ -145,6 +287,7 @@ export default function FolderDetailPage() {
         </div>
       ) : (
         <div className="grid gap-4">
+          <h2 className="text-lg font-semibold">Code Snippets</h2>
           {codes.map((code) => (
             <div
               key={code._id}
@@ -187,6 +330,61 @@ export default function FolderDetailPage() {
           ))}
         </div>
       )}
+
+      {/* Create Folder Modal */}
+      <CustomModal
+        open={createFolderModalOpen}
+        onOpenChange={setCreateFolderModalOpen}
+        title="Create Nested Folder"
+        description="Add a new folder to organize your code"
+      >
+        <div className="space-y-4">
+          <CustomInput
+            placeholder="Folder name"
+            value={folderFormData.name}
+            onChange={(e) =>
+              setFolderFormData({ ...folderFormData, name: e.target.value })
+            }
+          />
+          <CustomInput
+            placeholder="Description"
+            value={folderFormData.description}
+            onChange={(e) =>
+              setFolderFormData({
+                ...folderFormData,
+                description: e.target.value,
+              })
+            }
+          />
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium">Color:</label>
+            <input
+              type="color"
+              value={folderFormData.color}
+              onChange={(e) =>
+                setFolderFormData({ ...folderFormData, color: e.target.value })
+              }
+              className="h-10 w-12 cursor-pointer rounded border border-border"
+            />
+          </div>
+          <div className="flex gap-3 pt-4">
+            <Button
+              onClick={() => setCreateFolderModalOpen(false)}
+              variant="outline"
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateFolder}
+              disabled={submitting}
+              className="flex-1 gap-2 bg-primary hover:bg-primary/90"
+            >
+              {submitting ? "Creating..." : "Create Folder"}
+            </Button>
+          </div>
+        </div>
+      </CustomModal>
     </div>
   )
 }

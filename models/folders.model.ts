@@ -9,6 +9,10 @@ const FolderSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    parentFolder: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Folder"
+    },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
@@ -25,6 +29,10 @@ const FolderSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+
+// Indexes
+FolderSchema.index({ createdBy: 1 });
+FolderSchema.index({ parentFolder: 1 });
 
 const Folder = mongoose.models.Folder || mongoose.model("Folder", FolderSchema)
 export default Folder

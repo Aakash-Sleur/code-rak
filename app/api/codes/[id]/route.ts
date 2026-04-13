@@ -73,7 +73,7 @@ export async function PUT(
             );
         }
 
-        const { title, description, code, language, tags, isPublic } = await request.json()
+        const { title, description, code, language, tags, isPublic, folder } = await request.json()
 
         await connectDB()
         const { id } = await params
@@ -95,6 +95,26 @@ export async function PUT(
             );
         }
 
+        // If moving to a different folder, verify ownership of target folder
+        if (folder && folder !== existingCode.folder?.toString()) {
+            const Folder = require("@/models/folders.model").default;
+            const targetFolder = await Folder.findById(folder);
+
+            if (!targetFolder) {
+                return NextResponse.json(
+                    { message: "Target folder not found" },
+                    { status: 404 }
+                );
+            }
+
+            if (targetFolder.createdBy.toString() !== session.user.id) {
+                return NextResponse.json(
+                    { message: "Unauthorized - Cannot move to this folder" },
+                    { status: 403 }
+                );
+            }
+        }
+
         // Update code
         const updatedCode = await Code.findByIdAndUpdate(
             id,
@@ -105,6 +125,7 @@ export async function PUT(
                 language: language || existingCode.language,
                 tags: tags !== undefined ? tags : existingCode.tags,
                 isPublic: isPublic !== undefined ? isPublic : existingCode.isPublic,
+                folder: folder !== undefined ? folder : existingCode.folder,
                 version: existingCode.version + 1,
             },
             { new: true }

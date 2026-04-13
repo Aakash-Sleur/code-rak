@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { CustomModal, showNotification } from "@/components/custom"
 import { CustomInput } from "@/components/custom"
 import { PageLoader } from "@/components/page-loader"
-import { IconFolderPlus, IconTrash, IconArrowRight } from "@tabler/icons-react"
+import { FolderGridDnd } from "@/components/folder-grid-dnd"
+import { IconFolderPlus } from "@tabler/icons-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -141,7 +142,7 @@ export default function FoldersPage() {
         </Button>
       </div>
 
-      {/* Folders Grid */}
+      {/* Folders Grid with Drag & Drop */}
       {folders.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 p-8">
           <div className="text-center">
@@ -156,53 +157,13 @@ export default function FoldersPage() {
           </div>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {folders.map((folder) => (
-            <div
-              key={folder._id}
-              className="group relative rounded-lg border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
-            >
-              {/* Folder Color Indicator */}
-              <div
-                className="absolute top-0 left-0 h-12 w-1 rounded-tl-lg"
-                style={{ backgroundColor: folder.color }}
-              />
-
-              {/* Content */}
-              <div className="pl-2">
-                <h3 className="line-clamp-1 font-semibold text-foreground">
-                  {folder.name}
-                </h3>
-                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                  {folder.description}
-                </p>
-              </div>
-
-              {/* Footer with actions */}
-              <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                <p className="text-xs text-muted-foreground">
-                  {new Date(folder.createdAt).toLocaleDateString()}
-                </p>
-                <div className="flex gap-2">
-                  <Link href={`/folders/${folder._id}`}>
-                    <Button variant="ghost" size="sm" className="gap-1">
-                      <IconArrowRight size={16} />
-                      View
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteFolder(folder._id)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <IconTrash size={16} />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <FolderGridDnd
+          folders={folders}
+          onDelete={handleDeleteFolder}
+          onReorder={(reorderedFolders) => {
+            setFolders(reorderedFolders)
+          }}
+        />
       )}
 
       {/* Create Folder Modal */}

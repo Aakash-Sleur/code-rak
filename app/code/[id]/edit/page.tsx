@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react"
 import Editor from "@monaco-editor/react"
 import { FolderExplorer } from "@/components/folder-explorer"
 import { CodeMetaModal } from "@/components/code-meta-modal"
+import { MoveCodeModal } from "@/components/move-code-modal"
 import { PageLoader } from "@/components/page-loader"
 import { showNotification } from "@/components/custom"
 import { Button } from "@/components/ui/button"
@@ -227,6 +228,16 @@ export default function CodeEditorPage() {
               folderInfo={folderInfo}
               onNavigateToFolder={handleNavigateToFolder}
               onNavigateToFolders={handleNavigateToFolders}
+            />
+            <MoveCodeModal
+              codeId={codeId}
+              currentFolderId={codeData.folder?._id}
+              codeName={codeData.title}
+              onMove={(newFolderId) => {
+                if (newFolderId && newFolderId !== codeData.folder?._id) {
+                  router.push(`/folders/${newFolderId}`)
+                }
+              }}
             />
             <Button
               onClick={handleSave}
